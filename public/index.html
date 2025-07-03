@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <title>🐼 ToDos</title>
+        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Quicksand', sans-serif;
+                background: url('https://media.istockphoto.com/id/1341283457/vector/seamless-cartoon-bamboo-pattern.jpg?s=612x612&w=0&k=20&c=Pj844F44UCGWqYzAPkqvlWyq6ZuhIhOmKapdHZd8cg0=') repeat;
+                background-size: 300px;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                min-height: 100vh;
+                align-items: start;
+            }
+
+            .container{
+                background-color: #ffffffdd;
+                margin-top: 40px;
+                padding: 30px;
+                border-radius: 20px;
+                box-shadow: 0 0 20pz #aaa;
+                max-width: 500px;
+                width: 100%;
+            }
+
+            h2{
+                text-align: center;
+                color: #333;
+                font-size: 2rem;
+                margin-bottom: 20px;
+            }
+
+            h2::before{
+                content: '🐼 ';
+            }
+
+            form {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 20px;
+                justify-content: center;
+
+            }
+            
+            input[type="text"] {
+                flex: 1;
+            }
+
+            button {
+                padding: 10px 15px;
+                border: none;
+                background-color: #7ccfb3;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            button:hover{
+                background-color: #5ab89b;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+
+            li {
+                background-color: #fdfdfd;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                padding: 10px;
+                margin-bottom: 10 px;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #todoList {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            li input [type="checkbox"]{
+                margin-right: 10px;
+                transform: scale(1.3);
+            }
+
+            #sonuc {
+                text-align: center;
+                font-weight: bold;
+                margin-top: 10px;
+            }
+
+            .sil {
+                background-color: #ffb3b3;
+                margin-left: 10px;
+                color: #fff;
+                border: none;
+                padding: 6px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            .sil:hover{
+                background-color: #e67c7c;
+            }
+            
+            .tamamlandi {
+                text-decoration: line-through;
+                color: #999;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+
+            <h2>Yapılacaklar Listesi</h2>
+
+            <form id="todoForm">
+                <input type="text" id="title" placeholder="Görev giriniz..." required>
+                <button type="submit">Ekle</button>
+            </form>
+
+            <div id="sonuc"></div>
+            <ul id="todoList"></ul>
+        </div>
+
+        <script>
+            const form = document.getElementById('todoForm');
+            const sonuc = document.getElementById('sonuc');
+            const todoList = document.getElementById('todoList');
+            const API_URL = 'http://localhost:3000/todos';
+
+
+            async function fetchTodos(){
+                try {
+                    const res = await fetch(API_URL);
+                    const todos = await res.json();
+
+                    todoList.innerHTML = '';
+                    todos.forEach(todo => {
+                        const li = document.createElement('li');
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = todo.completed;
+                        
+                        
+                        const text = document.createTextNode(todo.title);
+
+                        const silBtn = document.createElement('button');
+                        silBtn.textContent = 'Sil';
+                        silBtn.className = 'sil';
+                        silBtn.onclick = () => deleteTodo(todo.id);
+
+                        if(todo.completed){
+                            li.classList.add('tamamlandi');
+                        }
+
+                        checkbox.onchange = () => {
+                            if(checkbox.checked){
+                                li.classList.add('tamamlandi');
+                            } else {
+                                li.classList.remove('tamamlandi');
+                            }
+                        };
+
+                        li.appendChild(checkbox);
+                        li.appendChild(text);
+                        li.appendChild(silBtn);
+
+                        todoList.appendChild(li);
+                    });
+                } catch (err){
+                    console.error('Görevler alınamadı: ', err);
+                }
+            }
+
+
+            async function deleteTodo(id){
+                console.log('silinecek id: '.id);
+                if(!id){
+                    console.error('geçersiz id: ', id);
+                return;               
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}/${id}`, {method: 'DELETE'});
+                    if (res.ok){
+                        fetchTodos();
+                    } else {
+                        console.error('sunucu hata döndü: ', res.status);
+                    }
+                } catch (err) {
+                    console.error('Silme hatası: ', err);
+                }
+            }
+
+            form.addEventListener('submit', async (e)=> {
+                e.preventDefault();
+                const title = document.getElementById('title').value;
+                if (!title){
+                    sonuc.textContent= 'Lütfen görev yazınız';
+                    sonuc.style.color ='orange';
+                    return;
+                }
+
+                try{
+                const response = await fetch (API_URL,{
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title})
+                });
+
+                if (!response.ok) {
+                    throw new Error('Görev eklenemedi');
+                }
+
+                const data = await response.json();
+
+                sonuc.textContent = '🐼 Görev Eklendi';
+                sonuc.style.color ='green';
+                form.reset();
+                fetchTodos();
+
+                setTimeout(()=> {
+                    sonuc.textContent= '';
+                }, 1000);
+                }
+                catch (err){
+                    sonuc.textContent = `Eklenemedi. (Hata: ${err.message})`;
+                    sonuc.style.color = 'red';
+                }
+            });
+
+            fetchTodos();
+        </script>
+    </body>
+</html>
