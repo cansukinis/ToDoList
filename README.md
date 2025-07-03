@@ -1,4 +1,4 @@
-#### Overview
+### Overview
 
 ToDoList is a backend API that simplifies task management by providing a RESTful interface for creating, retrieving, updating and deleting to-do items. Built with Node.js, Express and MongoDB.
 
